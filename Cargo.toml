@@ -1,0 +1,12 @@
+[package]
+name = "pastiche"
+version = "0.1.0"
+authors = ["RedRam"]
+edition = "2021"
+
+description = "A WIP library for exposing non public types, fields, and functions from a crate"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+keywords = ["reflection"]
+
+[dependencies]
