@@ -1,0 +1,19 @@
+max_width=100
+attr_fn_like_width=100
+chain_width=80
+# Use max_width instead of weird precentages for certain items
+use_small_heuristics="Max"
+newline_style="Unix"
+use_field_init_shorthand=true
+fn_params_layout="Compressed"
+# format_code_in_doc_comments=true # unstable
+# allow array, etc to start on same line if too long when formatting
+# overflow_delimited_expr=true # unstable
+
+# 3 import groups, std, externals, crate
+# group_imports="StdExternalCrate" # unstable
+# split/merge imports into module-level groups (wish there was a no split option)
+# imports_granularity="Module" # unstable
+# Prevent one super massive derive
+merge_derives=false
+# struct_lit_single_line=true # unstable

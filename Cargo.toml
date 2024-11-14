@@ -9,4 +9,14 @@ readme = "README.md"
 license = "MIT OR Apache-2.0"
 keywords = ["reflection"]
 
+[lib]
+proc-macro = true
+
+[dev-dependencies]
+lv2 = "0.6.0"
+
 [dependencies]
+home = "0.5.9"
+proc-macro2 = "1.0.89"
+quote = "1.0.37"
+syn = { version = "2.0.87", features = ["full", "printing"] }
