@@ -37,6 +37,7 @@ pub(crate) fn walk(search_dir: &Path, item_path: &str) -> (PathBuf, WalkStatus) 
     todo!()
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ModuleLocation {
     /// `foo/...`
     Folder,
@@ -49,12 +50,12 @@ pub enum ModuleLocation {
 /// `crate-name-0.6.0`, `[::]mod::mod::mod[::]`
 ///
 /// `path` must end with a module, not an item.
-pub fn module_file_path(search_dir: &Path, path: &str) -> (PathBuf, ModuleLocation) {
+pub fn module_file_path(search_dir: &Path, mod_path: &str) -> (PathBuf, ModuleLocation) {
     #[cfg(debug_assertions)]
     {
-        let last = match path.rsplit_once("::") {
+        let last = match mod_path.rsplit_once("::") {
             Some((_, last)) => last,
-            None => path,
+            None => mod_path,
         };
         debug_assert!(
             !last.as_bytes()[0].is_ascii_uppercase(),
@@ -62,8 +63,8 @@ pub fn module_file_path(search_dir: &Path, path: &str) -> (PathBuf, ModuleLocati
         );
     }
 
-    let path = path.trim_matches(':').replace("::", "/");
-    let base_dir = search_dir.join("src/lib.rs");
+    let path = mod_path.trim_matches(':').replace("::", "/");
+    let base_dir = search_dir.join("src");
 
     // FIXME: doesn't handle multiple nested inline modules at the end
     // Most modules must have folders. Last can be foo.rs or mod foo {}
@@ -72,6 +73,8 @@ pub fn module_file_path(search_dir: &Path, path: &str) -> (PathBuf, ModuleLocati
     let mod_file = base_dir.join(format!("{}.rs", path));
     let mut mod_inline = base_dir.join(path);
     mod_inline.pop();
+
+    dbg!(&mod_folder, &mod_file);
 
     if mod_folder.exists() {
         (mod_folder, ModuleLocation::Folder)

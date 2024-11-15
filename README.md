@@ -6,6 +6,27 @@ struct, a load of traits, all the methods I need, everything those traits
 and methods need to import, and all the crates they use. Just for me to be able
 to add "`pub`" in front of it.
 
+# Features and Roadmap
+- [x] copy definition
+- [x] change visibility
+- [x] most items: `const`, `enum`, `fn`, `macro_rules`, `static`, `struct`, `trait`, `union`
+- [ ] attributes
+- [ ] std library crates
+- [ ] re-exports
+- [ ] support not specifying crate verion/dont use file system paths
+- [ ] copying modules
+- [ ] recursivly copying item dependancies
+
+## Ideas
+- enforcing, changing, adding, removing, ignoring:
+    - [x] items variant (`Struct`, `fn`, etc)
+    - [ ] field names
+    - [ ] field types
+    - [ ] field size, alignment
+    - [ ] constants
+    - [ ] method arguments
+    - [ ] method return value
+
 ## License
 
 Licensed under either of

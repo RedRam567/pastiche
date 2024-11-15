@@ -1,13 +1,32 @@
+use lv2::prelude::Plugin;
+use lv2::prelude::PortCollection;
+use lv2::urid::UriBound;
+
+pastiche::pastiche!("lv2-core-3.0.0", pub, plugin::PluginInstance);
+
+struct DummyPlugin;
+
+impl Plugin for DummyPlugin {
+    type Ports = ();
+    type InitFeatures = ();
+    type AudioFeatures = ();
+
+    fn new(_: &lv2::prelude::PluginInfo, _: &mut Self::InitFeatures) -> Option<Self> {
+        Some(DummyPlugin)
+    }
+
+    fn run(&mut self, _: &mut Self::Ports, _: &mut Self::AudioFeatures, _: u32) {}
+}
+
+unsafe impl UriBound for DummyPlugin {
+    const URI: &'static [u8] = c"dummy".to_bytes();
+}
 
 fn main() {
-    let str = pastiche::get_span!(use std::str;);
-    println!("{}", str);
-    let str = r#"use pastiche::get_span;
-    
-    fn main() {
-        let str = pastiche::get_span!(use std::str;);
-        panic!("{}", str);
-    }"#;
-    dbg!(&str[71+12..74+12]);
-    panic!()
+    let instance = self::PluginInstance {
+        instance: DummyPlugin,
+        connections: (),
+        init_features: (),
+        audio_features: (),
+    };
 }
