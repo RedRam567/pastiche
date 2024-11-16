@@ -1,5 +1,4 @@
 mod files;
-mod modules;
 
 use files::*;
 use proc_macro::TokenStream;
@@ -108,7 +107,7 @@ fn force_visibility_inner(search_dir: &Path, item_path: RustPath, vis: Visibilit
     // Get the file its in
     let (file_path, mod_location) = module_file_path(search_dir, mod_path.as_str());
     if mod_location == ModuleLocation::Inline {
-        return todo!("inline");
+        todo!("inline");
     }
 
     let file_string = std::fs::read_to_string(file_path).unwrap();

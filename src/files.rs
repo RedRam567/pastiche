@@ -15,28 +15,6 @@ pub fn get_registry_srcs_path() -> io::Result<PathBuf> {
     Ok(index_crates_io.path())
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) enum WalkStatus {
-    Ok,
-    /// Just doesn't exist or the module is inline.
-    NotInFileSystem,
-    /// Found `foo.rs` and `foo/mod.rs`
-    Duplicate,
-}
-
-// most mods must have folders. last can be foo.rs or mod foo {}
-// lv2-0.6.0, [::]crate::mod::mod::mod::item
-pub(crate) fn walk(search_dir: &Path, item_path: &str) -> (PathBuf, WalkStatus) {
-    let item_path = item_path.trim_matches(':');
-    let mut working_path = search_dir.to_path_buf();
-    let mut iter = item_path.split("::").peekable();
-
-    while let Some(crate_mod) = iter.next() {
-        let is_last = iter.peek().is_none();
-    }
-    todo!()
-}
-
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ModuleLocation {
     /// `foo/...`
