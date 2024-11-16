@@ -1,9 +1,7 @@
-mod files;
-
-use files::*;
 use proc_macro::TokenStream;
 use quote::ToTokens;
 use std::path::{Path, PathBuf};
+use std::{fs, io};
 use syn::{Item, Visibility};
 
 // force public (also fields)
@@ -11,7 +9,7 @@ use syn::{Item, Visibility};
 
 // ideally it'd just be `crate::prelude::Struct as pub(crate) MyStruct`, idk how for sub vis
 /// Copy and force an item in a crate to a certain visibility.
-/// 
+///
 /// `pastiche!("search_dir", pub, path::item)`.
 #[proc_macro]
 pub fn pastiche(tokens: TokenStream) -> TokenStream {
@@ -35,21 +33,6 @@ pub fn pastiche(tokens: TokenStream) -> TokenStream {
     force_visibility_inner(&search_dir, item_path.into(), vis)
     // let path = tokens.
     // let path = syn::parse::<syn::Path>(tokens).expect("Expected item path");
-}
-
-// find
-/// std, f32::next_up
-/// lv2, prelude::PluginInstance
-fn get_definition(in_crate: &str, path: &str) -> Option<String> {
-    // find lv2 file
-    // find prelude module file
-    // find PluginInstance
-    // its in lv2_cor
-    // ...
-    // let x = <std>::f32::next_up;
-    // let x: <&[(); 0]> = todo!();
-    // std::slice::
-    None
 }
 
 /// lv2-0.6.0
@@ -146,11 +129,6 @@ impl RustPath {
         self.inner.rsplit_once("::").map(|(l, r)| (l.into(), r.into()))
     }
 
-    fn last_item(&self) -> RustPath {
-        let Some((_, last)) = self.inner.rsplit_once("::") else { return self.clone() };
-        RustPath { inner: last.to_string() }
-    }
-
     fn as_str(&self) -> &str {
         &self.inner
     }
@@ -215,4 +193,67 @@ fn item_force_visibility(item: &Item, vis: Visibility) -> Item {
         _ => panic!("unsupported item type: {:?}", item.to_token_stream()),
     }
     item
+}
+
+fn get_registry_srcs_path() -> io::Result<PathBuf> {
+    let src = home::cargo_home()?.join("registry/src");
+    let mut entries = fs::read_dir(src)?;
+
+    // "index.crates.io-<HASH>"
+    let (Some(Ok(index_crates_io)), None) = (entries.next(), entries.next()) else {
+        // must only have 1 dir else idk what to do
+        let into = io::ErrorKind::Other.into();
+        return Err(into);
+    };
+
+    Ok(index_crates_io.path())
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+enum ModuleLocation {
+    /// `foo/...`
+    Folder,
+    /// `foo.rs`
+    File,
+    /// `mod foo {}`
+    Inline,
+}
+
+/// `crate-name-0.6.0`, `[::]mod::mod::mod[::]`
+///
+/// `path` must end with a module, not an item.
+fn module_file_path(search_dir: &Path, mod_path: &str) -> (PathBuf, ModuleLocation) {
+    #[cfg(debug_assertions)]
+    {
+        let last = match mod_path.rsplit_once("::") {
+            Some((_, last)) => last,
+            None => mod_path,
+        };
+        debug_assert!(
+            !last.as_bytes()[0].is_ascii_uppercase(),
+            "Last element in path must be a module, not an item"
+        );
+    }
+
+    let path = mod_path.trim_matches(':').replace("::", "/");
+    let base_dir = search_dir.join("src");
+
+    // FIXME: doesn't handle multiple nested inline modules at the end
+    // Most modules must have folders. Last can be foo.rs or mod foo {}
+    // So we can skip everything but last module.
+    let mod_folder = base_dir.join(format!("{}/mod.rs", path));
+    let mod_file = base_dir.join(format!("{}.rs", path));
+    let mut mod_inline = base_dir.join(path);
+    mod_inline.pop();
+
+    dbg!(&mod_folder, &mod_file);
+
+    if mod_folder.exists() {
+        (mod_folder, ModuleLocation::Folder)
+    } else if mod_file.exists() {
+        (mod_file, ModuleLocation::File)
+    } else {
+        // just assume its inline
+        (mod_inline, ModuleLocation::Inline)
+    }
 }
