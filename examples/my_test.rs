@@ -18,12 +18,14 @@ impl Plugin for DummyPlugin {
     fn run(&mut self, _: &mut Self::Ports, _: &mut Self::AudioFeatures, _: u32) {}
 }
 
+// Safety: is cstr
 unsafe impl UriBound for DummyPlugin {
     const URI: &'static [u8] = c"dummy".to_bytes();
 }
 
 fn main() {
-    let instance = self::PluginInstance {
+    // yay I can use it now
+    let _instance = self::PluginInstance {
         instance: DummyPlugin,
         connections: (),
         init_features: (),
