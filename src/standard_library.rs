@@ -39,6 +39,7 @@ pub(crate) fn all_toolchains() -> Vec<Toolchain> {
     out
 }
 
+// TODO: remove path
 /// `1.68.2-x86_64-unknown-linux-gnu`,
 /// `nightly-x86_64-unknown-linux-gnu`
 #[derive(Clone, Debug)]

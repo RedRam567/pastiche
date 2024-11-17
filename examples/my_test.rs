@@ -3,6 +3,7 @@ use lv2::prelude::PortCollection;
 use lv2::urid::UriBound;
 
 pastiche::pastiche!("lv2-core-3.0.0", pub, plugin::PluginInstance);
+// pastiche::pastiche!("std@1.82", pub, plugin::PluginInstance);
 
 struct DummyPlugin;
 
@@ -15,7 +16,8 @@ impl Plugin for DummyPlugin {
         Some(DummyPlugin)
     }
 
-    fn run(&mut self, _: &mut Self::Ports, _: &mut Self::AudioFeatures, _: u32) {}
+    fn run(&mut self, _: &mut Self::Ports, _: &mut Self::AudioFeatures, _: u32) {
+    }
 }
 
 // Safety: is cstr
@@ -32,3 +34,32 @@ fn main() {
         audio_features: (),
     };
 }
+
+#[pastiche::pastiche_attr]
+#[pastiche::uh]
+struct MyPuginInstance {
+    pub INHERIT: (),
+}
+
+// /// ```rust compile_fail,ignore
+// ///     #[pastiche::path(std::num::IntErrorKind, "stable")]
+// ///     #[pastiche::attr_has(repr(C))]
+// ///     #[pastiche::attr_add(derive(Clone))]
+// ///     #[pastiche::attr_remove(derive(Debug))]
+// ///     #[pastiche::attr_inherit]
+// ///     #[pastiche::attr_add(derive(Copy))]
+// ///     #[pastiche::attr_move(repr(C))] // move reprc from inherited to down here
+// ///     #[pastiche::use_if_public] // just `use::` if vis matches
+// ///     pub struct PubIntErrorKind {
+// ///         pub ..
+// ///     }
+// /// ```
+// #[proc_macro_attribute]
+// pub fn pastiche_attr(attrs: TokenStream, item: TokenStream) -> TokenStream {
+//     dbg!(&attrs);
+//     dbg!(&item);
+//     let x = syn::parse_macro_input!(item as Item);
+//     dbg!(x.to_token_stream());
+//     // panic!();
+//     item
+// }

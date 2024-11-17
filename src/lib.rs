@@ -2,7 +2,8 @@ use proc_macro::TokenStream;
 use quote::ToTokens;
 use std::path::{Path, PathBuf};
 use std::{fs, io};
-use syn::{Item, Visibility};
+use syn::{Item, ItemStruct, Visibility};
+use crate::standard_library::Toolchain;
 
 mod standard_library;
 
@@ -37,13 +38,44 @@ pub fn pastiche(tokens: TokenStream) -> TokenStream {
     // let path = syn::parse::<syn::Path>(tokens).expect("Expected item path");
 }
 
-/// lv2-0.6.0
+// // fn pastiche_attr_inner(search_dir: &Path, item_path: RustPath, item: Item) -> Item {
+// //     // let attrs = item.a
+// // }
+
+/// `lv2-0.6.0`, `std@1.82.0`, `core@latest`, `alloc@nightly`
 fn get_crate_dir(the_crate: &str) -> std::io::Result<PathBuf> {
     match the_crate {
         "std" => todo!(),
         "core" => todo!(),
         name => Ok(get_registry_srcs_path()?.join(name)),
     }
+}
+
+// /// `lv2-0.6.0`, `std@1.82.0`, `core@latest`, `alloc@nightly`
+// enum Crate {
+//     // nah, just require version, put guessing logic elsewhere
+//     // /// `lv2`
+//     // RegistryCrate { name: String },
+//     /// Crates.io, etc
+//     ExternCrate {
+//         /// `lv2`
+//         name: String,
+//         /// `0.6.0`
+//         version: String,
+//     },
+//     StdCrate {
+//         /// std
+//         name: String,
+//         toolchain: Toolchain,
+//     },
+// }
+/// `lv2@0.6.0`, `std@1.82.0`, `core@latest`, `alloc@nightly`
+/// Finding versions should be independent of any caller crates/dependants of current crate
+/// `lv2@cargo.toml`, `lv2@cargo.lock` (impossible with above?)
+/// how to disambiguate when multiple in cargo.toml/lock?
+/// -> dont, fine if independant. Breaks multiple versions of same dependancy for a crate, but thats niche
+fn parse_crate(s: &str) {
+
 }
 
 // NOTE: search dir, crate version, vis, sub vis, item, attributes removal, adds and overrides
@@ -83,6 +115,22 @@ fn get_crate_dir(the_crate: &str) -> std::io::Result<PathBuf> {
 ///         pub fn speak() {
 ///             println!("meow");
 ///         }
+///     }
+/// }
+/// ```
+/// 
+/// NOTE: attribute like macro better? yeah
+/// ```rust compile_fail
+/// pastiche! {
+///     "std::num::IntErrorKind@stable,1.82",
+///     #[attr_has(repr(C))]
+///     #[attr_add(derive(Clone))]
+///     #[attr_remove(derive(Debug))]
+///     #[attr_inherit]
+///     #[attr_add(derive(Copy))]
+///     #[attr_move(repr(C))] // move reprc from inherited to down here
+///     pub struct MyStruct {
+///         pub inherit
 ///     }
 /// }
 /// ```
