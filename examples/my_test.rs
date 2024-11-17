@@ -35,11 +35,11 @@ fn main() {
     };
 }
 
-#[pastiche::pastiche_attr]
-#[pastiche::uh]
-struct MyPuginInstance {
-    pub INHERIT: (),
-}
+// #[pastiche::pastiche_attr]
+// #[pastiche::uh]
+// struct MyPuginInstance {
+//     pub INHERIT: (),
+// }
 
 // /// ```rust compile_fail,ignore
 // ///     #[pastiche::path(std::num::IntErrorKind, "stable")]
