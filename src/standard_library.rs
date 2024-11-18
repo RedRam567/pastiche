@@ -23,8 +23,7 @@ pub(crate) fn get_specific_toolchain(
 
 /// Get the toolchains in `.../.rustup/toolchains/`
 pub(crate) fn all_toolchains() -> Vec<Toolchain> {
-    let search_dir =
-        home::rustup_home().expect("failed to find rustup home").join("toolchains");
+    let search_dir = home::rustup_home().expect("failed to find rustup home").join("toolchains");
     let iter = std::fs::read_dir(search_dir).expect("error walking toolchains folder");
 
     let mut out = Vec::new();
@@ -59,8 +58,8 @@ impl Toolchain {
     pub(crate) fn from_path(path: &Path) -> Self {
         let s = path.to_str().expect("not utf8 toolchain path");
         // beta, nightly, stable, 1.66.1
-        let (_path_version, triple) =
-            s.split_once('-').expect("unexpected toolchain path format");
+        // FIXME: use last part
+        let (_path_version, triple) = s.split_once('-').expect("unexpected toolchain path format");
 
         // I dont see a better way than to just call `rustc --version`
         let rustc = path.join("bin/rustc");
@@ -83,10 +82,9 @@ impl Toolchain {
     ///
     /// See also [`RustVersion`]
     pub(crate) fn matches(&self, version: &str, triple: &str) -> bool {
-        let (version, date) = version.split_once('-').unwrap_or((version, "SYNTH"));
+        let (version, date) = version.split_once('-').unwrap_or((version, "SYNTH-SYNTH-SYNTH"));
 
-        let synthetic =
-            RustVersion { inner: format!("rustc {} (SYNTHETIC {})", version, date) };
+        let synthetic = RustVersion { inner: format!("rustc {} (SYNTHETIC {})", version, date) };
         let (ver_ord, chan_ord, date_ord) = self.version.detailed_cmp(&synthetic);
 
         // weird returns
@@ -165,8 +163,8 @@ impl RustVersion {
 
         assert_eq!(rustc1, "rustc");
         assert_eq!(rustc2, "rustc");
-        assert_eq!(date1.split('-').count(), 3, "bad date");
-        assert_eq!(date2.split('-').count(), 3, "bad date");
+        assert_eq!(date1.split('-').count(), 3, "bad date {self:?} {other:?}");
+        assert_eq!(date2.split('-').count(), 3, "bad date {self:?} {other:?}");
         let sem_version1 = Version::parse(version1).expect("version not semver");
         let sem_version2 = Version::parse(version2).expect("version not semver");
 
@@ -195,3 +193,18 @@ impl RustChannel {
         Self::Stable
     }
 }
+
+// /// - `rustc 1.83.0-nightly (da889684c 2024-09-20)`,
+// /// - `rustc 1.83.0-beta.3 (f41c7ed98 2024-10-31)`
+// /// - `rustc 1.82.0 (f6e511eec 2024-10-15)`,
+// /// - `rustc 1.65.0 (897e37553 2022-11-02)`,
+// pub struct RustVersion2 {
+//     pub version: semver::Version,
+//     pub channel: RustChannel,
+// }
+
+// pub enum RustChannel2 {
+//     Stable,
+//     Beta,
+//     Nightly { date: String },
+// }

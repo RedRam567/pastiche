@@ -1,6 +1,9 @@
 use lv2::prelude::Plugin;
 use lv2::prelude::PortCollection;
 use lv2::urid::UriBound;
+use std::num::IntErrorKind;
+use std::num::ParseIntError;
+use std::str::FromStr;
 
 pastiche::pastiche!("lv2-core-3.0.0", pub, plugin::PluginInstance);
 // pastiche::pastiche!("std@1.82", pub, plugin::PluginInstance);
@@ -16,8 +19,7 @@ impl Plugin for DummyPlugin {
         Some(DummyPlugin)
     }
 
-    fn run(&mut self, _: &mut Self::Ports, _: &mut Self::AudioFeatures, _: u32) {
-    }
+    fn run(&mut self, _: &mut Self::Ports, _: &mut Self::AudioFeatures, _: u32) {}
 }
 
 // Safety: is cstr
@@ -33,13 +35,48 @@ fn main() {
         init_features: (),
         audio_features: (),
     };
+
+    let _instance2 = self::MyPluginInstance {
+        instance: DummyPlugin,
+        connections: (),
+        init_features: (),
+        audio_features: (),
+    };
+
+    // Directly construct a ParseIntError
+    let my_parse_int_error = MyParseIntError { kind: IntErrorKind::InvalidDigit };
+    let std_parse_int_error: ParseIntError =
+        unsafe { std::mem::transmute(my_parse_int_error.clone()) };
+
+    assert_eq!(
+        format!("{my_parse_int_error:?}").strip_prefix("My").unwrap(),
+        format!("{std_parse_int_error:?}")
+    );
+
+    // Rather than failing a parse to acheive it :/
+    let parse_int_error_invalid: ParseIntError = i32::from_str("baddbeef").unwrap_err();
+    assert_eq!(std_parse_int_error, parse_int_error_invalid);
 }
 
-// #[pastiche::pastiche_attr]
-// #[pastiche::uh]
-// struct MyPuginInstance {
-//     pub INHERIT: (),
-// }
+#[pastiche::pastiche_attr]
+// #[pastiche_crate("lv2-core@3.0.0")]
+// #[pastiche_path("lv2_core::plugin::PluginInstance")]
+#[pastiche_crate = "lv2-core@3.0.0"]
+#[pastiche_path = "lv2_core::plugin::PluginInstance"]
+pub struct MyPluginInstance {
+    pub INHERIT: (),
+}
+
+mod pub_super_hack {
+    use std::num::IntErrorKind;
+    #[pastiche::pastiche_attr]
+    #[pastiche_crate = "core@1.82.0"]
+    #[pastiche_path = "core::num::error::ParseIntError"]
+    pub struct MyParseIntError {
+        // body is ignored for now
+    }
+}
+pub use pub_super_hack::*;
 
 // /// ```rust compile_fail,ignore
 // ///     #[pastiche::path(std::num::IntErrorKind, "stable")]
@@ -63,3 +100,6 @@ fn main() {
 //     // panic!();
 //     item
 // }
+
+// #[derive(Copy)]
+// fn idk() {}

@@ -1,6 +1,6 @@
 fn main() {
     let host_triple = std::env::var("HOST").unwrap(); // from cargo
-                                                               // re export build.rs only HOST as idk normal env var for lib.rs
+                                                      // re export build.rs only HOST as idk normal env var for lib.rs
     println!("cargo:rustc-env=BUILD_RS_HOST={}", host_triple);
     println!("cargo:rustc-env=BUILD_RS_HOST_OS={}", get_os_from_triple(&host_triple).unwrap());
 }

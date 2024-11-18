@@ -8,8 +8,9 @@ use crate::rust::{ModuleLocation, RustPath};
 use crate::syn_helpers::*;
 use proc_macro::TokenStream;
 use quote::ToTokens;
-use std::path::{Path, PathBuf};
-use syn::{Item, Visibility};
+use std::path::Path;
+use std::str::FromStr;
+use syn::{Attribute, Item, Meta, MetaList, MetaNameValue, Visibility};
 
 // force public (also fields)
 // into raw parts
@@ -40,19 +41,6 @@ pub fn pastiche(tokens: TokenStream) -> TokenStream {
     force_visibility_inner(&search_dir, item_path.into(), vis)
     // let path = tokens.
     // let path = syn::parse::<syn::Path>(tokens).expect("Expected item path");
-}
-
-// // fn pastiche_attr_inner(search_dir: &Path, item_path: RustPath, item: Item) -> Item {
-// //     // let attrs = item.a
-// // }
-
-/// `lv2-0.6.0`, `std@1.82.0`, `core@latest`, `alloc@nightly`
-fn get_crate_dir(the_crate: &str) -> std::io::Result<PathBuf> {
-    match the_crate {
-        "std" => todo!(),
-        "core" => todo!(),
-        name => Ok(get_registry_srcs_path()?.join(name)),
-    }
 }
 
 // NOTE: search dir, crate version, vis, sub vis, item, attributes removal, adds and overrides
@@ -112,7 +100,7 @@ fn get_crate_dir(the_crate: &str) -> std::io::Result<PathBuf> {
 /// }
 /// ```
 fn force_visibility_inner(search_dir: &Path, item_path: RustPath, vis: Visibility) -> TokenStream {
-    let (mod_path, item_name) = item_path.split().unwrap();
+    let (mod_path, item_name) = item_path.split_last().unwrap();
 
     // Get the file its in
     let (file_path, mod_location) = module_file_system_path(search_dir, mod_path.as_str());
@@ -125,14 +113,107 @@ fn force_visibility_inner(search_dir: &Path, item_path: RustPath, vis: Visibilit
 
     // Force it public
     let item = find_item_in_file(&file, item_name).unwrap();
-    item_force_visibility(item, vis).to_token_stream().into()
+    item_set_visibility(item, vis).to_token_stream().into()
 }
 
-fn find_item_in_file(file: &syn::File, item_path: RustPath) -> Option<&Item> {
-    if !item_path.is_single_item() {
-        todo!("inline module")
+// /// ```rust compile_fail,ignore
+// ///     #[pastiche::path(std::num::IntErrorKind, "stable")]
+// ///     #[pastiche::attr_has(repr(C))]
+// ///     #[pastiche::attr_add(derive(Clone))]
+// ///     #[pastiche::attr_remove(derive(Debug))]
+// ///     #[pastiche::attr_inherit]
+// ///     #[pastiche::attr_add(derive(Copy))]
+// ///     #[pastiche::attr_move(repr(C))] // move reprc from inherited to down here
+// ///     #[pastiche::use_if_public] // just `use::` if vis matches
+// ///     pub struct PubIntErrorKind {
+// ///         pub ..
+// ///     }
+// /// ```
+// #[proc_macro_attribute]
+// pub fn pastiche_attr(attrs: TokenStream, item: TokenStream) -> TokenStream {
+//     dbg!(&attrs);
+//     dbg!(&item);
+//     let x = syn::parse_macro_input!(item as Item);
+//     dbg!(x.to_token_stream());
+//     // panic!();
+//     item
+// }
+
+// #[proc_macro(arg)]
+// item ...
+#[proc_macro_attribute]
+pub fn pastiche_attr(_arg: TokenStream, item: TokenStream) -> TokenStream {
+    // let arg = syn::parse_macro_input!(arg as Meta);
+    let item = syn::parse_macro_input!(item as Item);
+
+    let mut crate_ = None;
+    let mut item_path = None;
+    for attr in item_attributes(&item).unwrap_or(&Vec::new()) {
+        // dbg!(attr.meta.to_token_stream().to_string());
+        match attr.meta {
+            Meta::Path(_) => eprintln!("path {}", attr.meta.to_token_stream()),
+            Meta::List(_) => eprintln!("list {}", attr.meta.to_token_stream()),
+            Meta::NameValue(_) => eprintln!("namevalue {}", attr.meta.to_token_stream()),
+        }
+        // // match attr.meta
+        // dbg!(attr.style);
+        let Some(MetaNameValue { path, value, .. }) = attr_meta_name_value(attr.clone()) else {
+            continue;
+        };
+        let tokens = value.to_token_stream().into();
+        match syn_path_to_string(path).as_str() {
+            "pastiche_crate" => crate_ = Some(tokens_to_string_literal(tokens).expect("crate")),
+            "pastiche_path" => item_path = Some(tokens_to_string_literal(tokens).expect("path")),
+            _ => (),
+        }
     }
 
-    let ident = item_path.inner;
-    file.items.iter().find(|item| item_ident(item).as_ref() == Some(&ident))
+    let crate_ = Crate::from_str(crate_.as_ref().expect("expected pastiche_crate"))
+        .expect("error parsing crate");
+    let item_path = RustPath::from_str(item_path.as_ref().expect("expected pastiche_path"))
+        .expect("error parsing path");
+
+    dbg!(&crate_);
+    dbg!(&item_path);
+
+    let token_stream = pastiche_inner(crate_, item_path, item, true).to_token_stream();
+    token_stream.into()
+}
+
+fn pastiche_inner(
+    crate_: Crate, item_path: RustPath, item: Item, remove_stablility_attrs: bool,
+) -> Item {
+    let triple = "x86_64-unknown-linux-gnu".to_string().into(); // FIXME: dont hardcode
+    let crate_path = Crate::file_system_path(&crate_, triple).expect("couldn't find crate path");
+    let vis = item_visibility(&item).expect("input item must have a visiblity");
+    let ident = item_ident(&item).expect("input item must have an ident");
+    drop(item);
+
+    let (crate_name, mod_path, item_name) = item_path.parts().expect("path parts");
+    // TODO: remove as_str
+    let (file_path, mod_location) = module_file_system_path(&crate_path, mod_path.as_str());
+    if mod_location == ModuleLocation::Inline {
+        todo!("inline module or path does not exist: {file_path:?}")
+    }
+
+    // Find the item in the file
+    let file_string = std::fs::read_to_string(&file_path).expect("error reading file");
+    let file = syn::parse_str::<syn::File>(&file_string).expect("error parsing file");
+    let item = find_item_in_file(&file, item_name)
+        .unwrap_or_else(|| panic!("item not found in file {:?}", file_path));
+
+    // Process the found item
+    let mut item = item_set_ident(&item_set_visibility(item, vis), ident);
+    item_remove_stablility_attrs(&mut item);
+    item
+}
+
+#[track_caller]
+pub(crate) fn vec_into_single<T: Clone + std::fmt::Debug>(vec: Vec<T>) -> Result<T, Vec<T>> {
+    if vec.len() == 1 {
+        Ok(vec[0].clone())
+    } else {
+        // panic!("Expected a single value. {:?} for {}", vec, std::any::type_name::<T>())
+        Err(vec)
+    }
 }
