@@ -14,6 +14,7 @@ to add "`pub`" in front of it.
 - [x] std library crates
 - [ ] re-exports
 - ~~[ ] support not specifying crate verion/dont use file system paths~~
+    - [x] support not specifying rustc version
 - [?] copying modules
 - [ ] recursivly copying item dependancies
 
@@ -26,6 +27,32 @@ to add "`pub`" in front of it.
     - [ ] associated types and constants
     - [ ] method arguments
     - [ ] method return value
+
+# Example
+
+```rust
+use pastiche::pastiche_attr;
+use std::num::IntErrorKind;
+
+// TODO: dont make this nessessary for ParseIntError
+mod pub_super_hack {
+    use super::*;
+
+    #[pastiche_attr]
+    #[pastiche_crate = "core@1.82.0"]
+    #[pastiche_path = "core::num::error::ParseIntError"]
+    pub struct MyParseIntError {
+        // body is ignored for now
+    }
+}
+pub use pub_super_hack::*;
+
+fn main() {
+    // Directly construct a ParseIntError
+    let my_error = MyParseIntError { kind: IntErrorKind::InvalidDigit };
+    dbg!(my_error);
+}
+```
 
 ## License
 
