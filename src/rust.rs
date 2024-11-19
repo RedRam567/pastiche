@@ -105,7 +105,6 @@ impl Toolchain2 {
         // TODO: semantic version check. 1.82.9999 == 1.82
         // skips checking fields if is_none. unwraps are infallible.
         // same as: is_some && unwrap != { return false }
-        dbg!(self, pattern);
         &pattern.channel == channel
             && (pattern.version.is_none() || pattern.version.as_ref().unwrap() == version)
             && (pattern.date.is_none() || pattern.date.as_ref().unwrap() == date)

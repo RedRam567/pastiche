@@ -1,6 +1,5 @@
 use crate::rust::{all_toolchains2, get_specific_toolchain2, ModuleLocation, Toolchain2};
-use crate::standard_library::{all_toolchains, RustChannel, RustVersion};
-use crate::vec_into_single;
+// use crate::standard_library::RustcVersion;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::{fs, io};
@@ -83,7 +82,7 @@ impl Crate {
                     StdLibCrate::from_str(version.as_ref().expect("must specify rustc toolchain"))
                         .expect("error parsing rustc toolchain");
                 let toolchain = Toolchain2::from_std_lib_crate(std_lib_crate, triple);
-                let (tc, raw_path) = get_specific_toolchain2(all_toolchains2(), &toolchain)
+                let (_tc, raw_path) = get_specific_toolchain2(all_toolchains2(), &toolchain)
                     .expect("found multiple or zero matching toolchains");
                 let path = raw_path.join("lib/rustlib/src/rust/library").join(crate_name);
                 Ok(path)
@@ -104,7 +103,6 @@ impl FromStr for Crate {
             "std" | "core" => Crate::StdLibCrate { crate_name: name, version },
             _ => Crate::Crate { crate_name: name, version },
         };
-        dbg!(&crate_);
         Ok(crate_)
     }
 }
@@ -145,18 +143,6 @@ impl StdLibCrate {
         } else {
             None
         }
-    }
-
-    // TODO: remove RustVersion in favor of this
-    fn into_rust_version(self, stable_rust_version: String) -> RustVersion {
-        // rustc 1.83.0-nightly (da889684c 2024-09-20),
-        // rustc 1.83.0-beta.3 (f41c7ed98 2024-10-31)
-        // rustc 1.82.0 (f6e511eec 2024-10-15),
-        // rustc 1.65.0 (897e37553 2022-11-02),
-        let StdLibCrate { channel, version, date } = self;
-        // let
-        // format!("rustc {} (SYNTHETIC {})")
-        todo!()
     }
 }
 

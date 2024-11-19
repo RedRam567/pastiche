@@ -5,7 +5,7 @@ use std::num::IntErrorKind;
 use std::num::ParseIntError;
 use std::str::FromStr;
 
-pastiche::pastiche!("lv2-core-3.0.0", pub, plugin::PluginInstance);
+// pastiche::pastiche!("lv2-core-3.0.0", pub, plugin::PluginInstance);
 // pastiche::pastiche!("std@1.82", pub, plugin::PluginInstance);
 
 struct DummyPlugin;
@@ -28,13 +28,14 @@ unsafe impl UriBound for DummyPlugin {
 }
 
 fn main() {
+    return;
     // yay I can use it now
-    let _instance = self::PluginInstance {
-        instance: DummyPlugin,
-        connections: (),
-        init_features: (),
-        audio_features: (),
-    };
+    // let _instance = self::PluginInstance {
+    //     instance: DummyPlugin,
+    //     connections: (),
+    //     init_features: (),
+    //     audio_features: (),
+    // };
 
     let _instance2 = self::MyPluginInstance {
         instance: DummyPlugin,
