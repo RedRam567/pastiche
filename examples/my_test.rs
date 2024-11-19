@@ -74,7 +74,7 @@ mod pub_super_hack {
     use super::*;
 
     #[pastiche_attr]
-    #[pastiche_crate = "core@1.82.0"]
+    #[pastiche_crate = "stable@1.82.0"]
     #[pastiche_path = "core::num::error::ParseIntError"]
     pub struct MyParseIntError {
         // body is ignored for now

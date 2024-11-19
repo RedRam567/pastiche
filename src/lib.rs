@@ -34,21 +34,22 @@ pub fn pastiche_attr(_arg: TokenStream, item: TokenStream) -> TokenStream {
             _ => (),
         }
     }
+    let crate_ = crate_.expect("expected pastiche_crate");
+    let item_path = item_path.expect("expected pastiche_path");
+    let triple = Some(std::env::var("TARGET").expect("build.rs TARGET"));
 
-    let crate_ = Crate::from_str(crate_.as_ref().expect("expected pastiche_crate"))
-        .expect("error parsing crate");
-    let item_path = RustPath::from_str(item_path.as_ref().expect("expected pastiche_path"))
-        .expect("error parsing path");
+    let item_path = RustPath::from_str(&item_path).expect("error parsing path");
+    let crate_ =
+        Crate::from_pastiche_crate_str(&crate_, triple, &item_path).expect("error parsing crate");
 
-    let token_stream = pastiche_inner(crate_, item_path, item, true).to_token_stream();
-    token_stream.into()
+    let token_stream = pastiche_inner(crate_, item_path, item, true);
+    token_stream.to_token_stream().into()
 }
 
 fn pastiche_inner(
     crate_: Crate, item_path: RustPath, item: Item, remove_stablility_attrs: bool,
 ) -> Item {
-    let triple = Some(std::env::var("TARGET").expect("build.rs TARGET"));
-    let crate_path = Crate::file_system_path(&crate_, triple).expect("couldn't find crate path");
+    let crate_path = Crate::file_system_path(&crate_).expect("couldn't find crate path");
     let vis = item_visibility(&item).expect("input item must have a visiblity");
     let ident = item_ident(&item).expect("input item must have an ident");
     drop(item);
@@ -59,7 +60,6 @@ fn pastiche_inner(
         crate_name.as_str(),
         "crate name in path must currently be the same as the crate"
     );
-    // TODO: remove as_str
     let (file_path, mod_location) = module_file_system_path(&crate_path, mod_path);
     if mod_location == ModuleLocation::Inline {
         todo!("inline module, or path does not exist: {file_path:?}")
