@@ -1,4 +1,4 @@
-use crate::rust::{all_toolchains2, get_specific_toolchain2, ModuleLocation, Toolchain2};
+use crate::rust::{all_toolchains2, get_specific_toolchain2, ModuleLocation, RustPath, Toolchain2};
 // use crate::standard_library::RustcVersion;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -20,7 +20,8 @@ pub fn get_registry_srcs_path() -> io::Result<PathBuf> {
 /// `crate-name-0.6.0`, `[::]mod::mod::mod[::]`
 ///
 /// `path` must end with a module, not an item.
-pub fn module_file_system_path(search_dir: &Path, mod_path: &str) -> (PathBuf, ModuleLocation) {
+pub fn module_file_system_path(search_dir: &Path, mod_path: RustPath) -> (PathBuf, ModuleLocation) {
+    let mod_path = mod_path.as_str();
     #[cfg(debug_assertions)]
     {
         let last = match mod_path.rsplit_once("::") {
@@ -54,16 +55,6 @@ pub fn module_file_system_path(search_dir: &Path, mod_path: &str) -> (PathBuf, M
     }
 }
 
-// kinda outdated now
-/// `lv2-0.6.0`, `std@1.82.0`, `core@latest`, `alloc@nightly`
-pub fn get_crate_dir(the_crate: &str) -> std::io::Result<PathBuf> {
-    match the_crate {
-        "std" => todo!(),
-        "core" => todo!(),
-        name => Ok(get_registry_srcs_path()?.join(name)),
-    }
-}
-
 #[derive(Clone, Debug)]
 pub enum Crate {
     Crate { crate_name: String, version: Option<String> },
@@ -71,6 +62,11 @@ pub enum Crate {
 }
 
 impl Crate {
+    pub fn crate_name(&self) -> &str {
+        let (Self::Crate { crate_name, .. } | Self::StdLibCrate { crate_name, .. }) = self;
+        crate_name
+    }
+    
     pub fn file_system_path(&self, triple: Option<String>) -> std::io::Result<PathBuf> {
         match self {
             Crate::Crate { crate_name, version } => {

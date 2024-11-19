@@ -175,6 +175,7 @@ pub fn item_attributes_mut(item: &mut Item) -> Option<&mut Vec<Attribute>> {
 }
 
 /// #[derive(Clone, Copy, "blah")]
+#[expect(unused)]
 pub fn attr_meta_list(attr: Attribute) -> Option<MetaList> {
     match attr {
         Attribute { style: AttrStyle::Inner(..), meta: Meta::List(v), .. } => Some(v),

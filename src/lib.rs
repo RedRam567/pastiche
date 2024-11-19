@@ -8,24 +8,15 @@ use crate::syn_helpers::*;
 use proc_macro::TokenStream;
 use quote::ToTokens;
 use std::str::FromStr;
-use syn::{Item, Meta, MetaNameValue};
+use syn::{Item, MetaNameValue};
 
 #[proc_macro_attribute]
 pub fn pastiche_attr(_arg: TokenStream, item: TokenStream) -> TokenStream {
-    // let arg = syn::parse_macro_input!(arg as Meta);
     let item = syn::parse_macro_input!(item as Item);
 
     let mut crate_ = None;
     let mut item_path = None;
     for attr in item_attributes(&item).unwrap_or(&Vec::new()) {
-        // dbg!(attr.meta.to_token_stream().to_string());
-        match attr.meta {
-            Meta::Path(_) => eprintln!("path {}", attr.meta.to_token_stream()),
-            Meta::List(_) => eprintln!("list {}", attr.meta.to_token_stream()),
-            Meta::NameValue(_) => eprintln!("namevalue {}", attr.meta.to_token_stream()),
-        }
-        // // match attr.meta
-        // dbg!(attr.style);
         let Some(MetaNameValue { path, value, .. }) = attr_meta_name_value(attr.clone()) else {
             continue;
         };
@@ -56,8 +47,13 @@ fn pastiche_inner(
     drop(item);
 
     let (crate_name, mod_path, item_name) = item_path.parts().expect("path parts");
+    assert_eq!(
+        crate_.crate_name().replace('-', "_"),
+        crate_name.as_str(),
+        "crate name in path must currently be the same as the crate"
+    );
     // TODO: remove as_str
-    let (file_path, mod_location) = module_file_system_path(&crate_path, mod_path.as_str());
+    let (file_path, mod_location) = module_file_system_path(&crate_path, mod_path);
     if mod_location == ModuleLocation::Inline {
         todo!("inline module or path does not exist: {file_path:?}")
     }

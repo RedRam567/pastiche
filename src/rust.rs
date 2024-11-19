@@ -19,6 +19,7 @@ impl RustPath {
     }
 
     /// returns the path to the last item and the last item.
+    #[expect(unused)]
     pub fn split_last(&self) -> Option<(RustPath, RustPath)> {
         self.inner.rsplit_once("::").map(|(l, r)| (l.into(), r.into()))
     }

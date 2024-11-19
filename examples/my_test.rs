@@ -28,7 +28,6 @@ unsafe impl UriBound for DummyPlugin {
 }
 
 fn main() {
-    return;
     // yay I can use it now
     // let _instance = self::PluginInstance {
     //     instance: DummyPlugin,
@@ -37,7 +36,7 @@ fn main() {
     //     audio_features: (),
     // };
 
-    let _instance2 = self::MyPluginInstance {
+    let _instance2 = MyPluginInstance {
         instance: DummyPlugin,
         connections: (),
         init_features: (),
