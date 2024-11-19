@@ -1,6 +1,6 @@
 #![deny(
     clippy::unwrap_used,
-    reason = "proc macros dont give line numbers for some reason, use expect()"
+    reason = "proc macros dont give line numbers, for some reason. use expect()"
 )]
 
 mod files;
@@ -14,6 +14,8 @@ use proc_macro::TokenStream;
 use quote::ToTokens;
 use std::str::FromStr;
 use syn::{Item, MetaNameValue};
+
+// The amount of error handling is absurd.
 
 #[proc_macro_attribute]
 pub fn pastiche_attr(_arg: TokenStream, item: TokenStream) -> TokenStream {
@@ -45,7 +47,7 @@ pub fn pastiche_attr(_arg: TokenStream, item: TokenStream) -> TokenStream {
 fn pastiche_inner(
     crate_: Crate, item_path: RustPath, item: Item, remove_stablility_attrs: bool,
 ) -> Item {
-    let triple = "x86_64-unknown-linux-gnu".to_string().into(); // FIXME: dont hardcode
+    let triple = Some(std::env::var("TARGET").expect("build.rs TARGET"));
     let crate_path = Crate::file_system_path(&crate_, triple).expect("couldn't find crate path");
     let vis = item_visibility(&item).expect("input item must have a visiblity");
     let ident = item_ident(&item).expect("input item must have an ident");

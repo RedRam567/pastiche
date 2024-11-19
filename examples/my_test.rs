@@ -1,3 +1,7 @@
+#![allow(clippy::missing_safety_doc)]
+#![allow(clippy::undocumented_unsafe_blocks)]
+
+use pastiche::pastiche_attr;
 use lv2::prelude::Plugin;
 use lv2::prelude::PortCollection;
 use lv2::urid::UriBound;
@@ -22,7 +26,6 @@ impl Plugin for DummyPlugin {
     fn run(&mut self, _: &mut Self::Ports, _: &mut Self::AudioFeatures, _: u32) {}
 }
 
-// Safety: is cstr
 unsafe impl UriBound for DummyPlugin {
     const URI: &'static [u8] = c"dummy".to_bytes();
 }
@@ -58,7 +61,7 @@ fn main() {
     assert_eq!(std_parse_int_error, parse_int_error_invalid);
 }
 
-#[pastiche::pastiche_attr]
+#[pastiche_attr]
 // #[pastiche_crate("lv2-core@3.0.0")]
 // #[pastiche_path("lv2_core::plugin::PluginInstance")]
 #[pastiche_crate = "lv2-core@3.0.0"]
@@ -68,8 +71,9 @@ pub struct MyPluginInstance {
 }
 
 mod pub_super_hack {
-    use std::num::IntErrorKind;
-    #[pastiche::pastiche_attr]
+    use super::*;
+
+    #[pastiche_attr]
     #[pastiche_crate = "core@1.82.0"]
     #[pastiche_path = "core::num::error::ParseIntError"]
     pub struct MyParseIntError {
