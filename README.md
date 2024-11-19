@@ -33,24 +33,30 @@ to add "`pub`" in front of it.
 ```rust
 use pastiche::pastiche_attr;
 use std::num::IntErrorKind;
+use std::str::FromStr;
 
-// TODO: dont make this nessessary for ParseIntError
-mod pub_super_hack {
-    use super::*;
-
-    #[pastiche_attr]
-    #[pastiche_crate = "stable@1.82.0"]
-    #[pastiche_path = "core::num::error::ParseIntError"]
-    pub struct MyParseIntError {
-        // body is ignored for now
-    }
+/// A new type that shadows the definition and attributes at
+/// [`core::num::ParseIntError`].
+#[pastiche_attr]
+#[pastiche_crate = "stable@1.82.0"]
+// NOTE: doesn't support re-exports rn, so we have to specify the
+// "real" module path
+#[pastiche_path = "core::num::error::ParseIntError"]
+#[pastiche_sub_vis(pub)] // set fields to public
+pub struct MyParseIntError {
+    // body is ignored for now
 }
-pub use pub_super_hack::*;
 
 fn main() {
-    // Directly construct a ParseIntError
+    // We can now directly construct a ParseIntError.
     let my_error = MyParseIntError { kind: IntErrorKind::InvalidDigit };
-    dbg!(my_error);
+    dbg!(&my_error);
+
+    // Rather than having to fail a parse. :/
+    let std_error = i32::from_str("baddbeef").unwrap_err();
+    dbg!(&std_error);
+
+    assert_eq!(&my_error.kind, std_error.kind());
 }
 ```
 

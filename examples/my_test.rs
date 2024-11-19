@@ -62,25 +62,19 @@ fn main() {
 }
 
 #[pastiche_attr]
-// #[pastiche_crate("lv2-core@3.0.0")]
-// #[pastiche_path("lv2_core::plugin::PluginInstance")]
 #[pastiche_crate = "lv2-core@3.0.0"]
 #[pastiche_path = "lv2_core::plugin::PluginInstance"]
 pub struct MyPluginInstance {
     pub INHERIT: (),
 }
 
-mod pub_super_hack {
-    use super::*;
-
-    #[pastiche_attr]
-    #[pastiche_crate = "stable@1.82.0"]
-    #[pastiche_path = "core::num::error::ParseIntError"]
-    pub struct MyParseIntError {
-        // body is ignored for now
-    }
+#[pastiche_attr]
+#[pastiche_crate = "stable@1.82.0"]
+#[pastiche_path = "core::num::error::ParseIntError"]
+#[pastiche_sub_vis(pub)]
+pub struct MyParseIntError {
+    // body is ignored for now
 }
-pub use pub_super_hack::*;
 
 // /// ```rust compile_fail,ignore
 // ///     #[pastiche::path(std::num::IntErrorKind, "stable")]

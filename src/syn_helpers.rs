@@ -1,8 +1,8 @@
 use crate::rust::RustPath;
 use quote::ToTokens;
 use syn::{
-    AttrStyle, Attribute, Ident, Item, LitStr, Meta, MetaList, MetaNameValue, PathArguments,
-    Visibility,
+    punctuated::Punctuated, Attribute, Field, Ident, Item, ItemStruct, LitStr, PathArguments,
+    Token, Visibility,
 };
 
 pub fn find_item_in_file(file: &syn::File, item_path: RustPath) -> Option<&Item> {
@@ -16,12 +16,10 @@ pub fn find_item_in_file(file: &syn::File, item_path: RustPath) -> Option<&Item>
         .find(|item| item_ident(item).map(|v| v.to_string()).as_ref() == Some(&ident))
 }
 
-// TODO: sub visibility
-pub fn item_set_visibility(item: &Item, vis: Visibility) -> Item {
+pub fn item_set_visibility(item: &mut Item, vis: Visibility, sub_vis: Option<Visibility>) {
     use syn::*;
 
-    let mut item = item.clone();
-    match &mut item {
+    match item {
         Item::Const(item) => item.vis = vis,
         Item::Enum(item) => item.vis = vis,
         // `pub extern crate` is even weirder than `extern crate`
@@ -43,14 +41,46 @@ pub fn item_set_visibility(item: &Item, vis: Visibility) -> Item {
         // Item::Verbatim(_) => todo!(),
         _ => panic!("unsupported item type: {:?}", item.to_token_stream()),
     }
-    item
+
+    item_set_sub_vis(item, sub_vis);
 }
 
-pub fn item_set_ident(item: &Item, new_ident: Ident) -> Item {
+fn item_set_sub_vis(item: &mut Item, sub_vis: Option<Visibility>) {
     use syn::*;
 
-    let mut item = item.clone();
-    match &mut item {
+    let Some(sub_vis) = sub_vis else { return };
+    match item {
+        Item::Mod(ItemMod { content: Some((_, items)), .. }) => {
+            for item in items {
+                // TODO: allow recursing when add proper support for modules
+                item_set_visibility(item, sub_vis.clone(), None);
+            }
+        }
+        Item::Struct(item) => {
+            let Some(fields) = struct_fields(item) else { return };
+            for field in fields {
+                field.vis = sub_vis.clone();
+            }
+        }
+        Item::Union(ItemUnion { fields: FieldsNamed { named: fields, .. }, .. }) => {
+            for field in fields {
+                field.vis = sub_vis.clone();
+            }
+        }
+        Item::Impl(_) => todo!("sub vis: `impl` associated const"),
+        Item::ForeignMod(_) => todo!("sub vis: `extern \"C\" {{ ... }}`"),
+        Item::Enum(_) => {
+            // Vis supported on syntax level but not for compiler.
+            // https://doc.rust-lang.org/error_codes/E0449.html
+        }
+        _ => (),
+    }
+}
+
+pub fn item_set_ident(item: &mut Item, new_ident: Ident) {
+    use syn::*;
+
+    match item {
         Item::Const(ItemConst { ident, .. })
         | Item::Enum(ItemEnum { ident, .. })
         | Item::ExternCrate(ItemExternCrate { ident, .. })
@@ -70,7 +100,6 @@ pub fn item_set_ident(item: &Item, new_ident: Ident) -> Item {
         // Item::Verbatim(_) => todo!(),
         _ => (),
     }
-    item
 }
 
 pub fn item_ident(item: &Item) -> Option<Ident> {
@@ -174,22 +203,15 @@ pub fn item_attributes_mut(item: &mut Item) -> Option<&mut Vec<Attribute>> {
     }
 }
 
-/// #[derive(Clone, Copy, "blah")]
-#[expect(unused)]
-pub fn attr_meta_list(attr: Attribute) -> Option<MetaList> {
-    match attr {
-        Attribute { style: AttrStyle::Inner(..), meta: Meta::List(v), .. } => Some(v),
-        _ => None,
-    }
-}
-
-/// #[attr = "blah"]
-/// #[attr = 2 + 2]
-pub fn attr_meta_name_value(attr: Attribute) -> Option<MetaNameValue> {
-    match attr {
-        Attribute { style: AttrStyle::Outer, meta: Meta::NameValue(v), .. } => Some(v),
-        _ => None,
-    }
+pub fn attr_path_and_inner(attr: &Attribute) -> (syn::Path, proc_macro2::TokenStream) {
+    use syn::*;
+    let path = attr.path().clone();
+    let tokens = match &attr.meta {
+        Meta::Path(_) => proc_macro2::TokenStream::new(),
+        Meta::List(MetaList { tokens, .. }) => tokens.to_token_stream(),
+        Meta::NameValue(MetaNameValue { value: expr, .. }) => expr.to_token_stream(),
+    };
+    (path, tokens)
 }
 
 pub fn syn_path_to_string(path: syn::Path) -> String {
@@ -206,6 +228,16 @@ pub fn syn_path_to_string(path: syn::Path) -> String {
         }
     }
     out.trim_end_matches("::").to_string()
+}
+
+pub fn struct_fields(item_struct: &mut ItemStruct) -> Option<&mut Punctuated<Field, Token![,]>> {
+    use syn::*;
+
+    match &mut item_struct.fields {
+        Fields::Named(FieldsNamed { named: fields, .. }) => Some(fields),
+        Fields::Unnamed(FieldsUnnamed { unnamed: fields, .. }) => Some(fields),
+        _ => None,
+    }
 }
 
 pub fn tokens_to_string_literal(tokens: proc_macro::TokenStream) -> syn::Result<String> {
