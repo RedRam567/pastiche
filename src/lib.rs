@@ -1,3 +1,8 @@
+#![deny(
+    clippy::unwrap_used,
+    reason = "proc macros dont give line numbers for some reason, use expect()"
+)]
+
 mod files;
 mod rust;
 mod syn_helpers;
@@ -55,7 +60,7 @@ fn pastiche_inner(
     // TODO: remove as_str
     let (file_path, mod_location) = module_file_system_path(&crate_path, mod_path);
     if mod_location == ModuleLocation::Inline {
-        todo!("inline module or path does not exist: {file_path:?}")
+        todo!("inline module, or path does not exist: {file_path:?}")
     }
 
     // Find the item in the file

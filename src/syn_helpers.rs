@@ -211,7 +211,12 @@ pub fn syn_path_to_string(path: syn::Path) -> String {
 pub fn tokens_to_string_literal(tokens: proc_macro::TokenStream) -> syn::Result<String> {
     let lit = syn::parse::<LitStr>(tokens)?;
     let raw_string = lit.to_token_stream().to_string();
-    Ok(raw_string.strip_prefix('"').unwrap().strip_suffix('"').unwrap().to_string())
+    Ok(raw_string
+        .strip_prefix('"')
+        .unwrap_or_else(|| unreachable!())
+        .strip_suffix('"')
+        .unwrap_or_else(|| unreachable!())
+        .to_string())
 }
 
 #[expect(clippy::match_like_matches_macro)]

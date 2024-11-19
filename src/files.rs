@@ -66,11 +66,11 @@ impl Crate {
         let (Self::Crate { crate_name, .. } | Self::StdLibCrate { crate_name, .. }) = self;
         crate_name
     }
-    
+
     pub fn file_system_path(&self, triple: Option<String>) -> std::io::Result<PathBuf> {
         match self {
             Crate::Crate { crate_name, version } => {
-                let fs_name = format!("{}-{}", crate_name, version.as_ref().unwrap());
+                let fs_name = format!("{}-{}", crate_name, version.as_ref().expect("TODO: version"));
                 Ok(get_registry_srcs_path()?.join(fs_name))
             }
             Crate::StdLibCrate { crate_name, version } => {

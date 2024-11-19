@@ -96,6 +96,7 @@ impl Toolchain2 {
     /// Panics if any fields of `self` are [`None`].
     ///
     /// [match]: https://doc.rust-lang.org/stable/std/keyword.match.html
+    #[allow(clippy::unwrap_used, reason = "infallible, nicer formatting")]
     fn matches(&self, pattern: &Self) -> bool {
         let Toolchain2 { channel, version: Some(version), date: Some(date), triple: Some(triple) } =
             self
