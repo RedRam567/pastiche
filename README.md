@@ -10,11 +10,11 @@ to add "`pub`" in front of it.
 - [x] copy definition
 - [x] change visibility
 - [x] most items: `const`, `enum`, `fn`, `macro_rules`, `static`, `struct`, `trait`, `union`
-- [ ] attributes
-- [ ] std library crates
+- [~] attributes
+- [x] std library crates
 - [ ] re-exports
-- [ ] support not specifying crate verion/dont use file system paths
-- [ ] copying modules
+- ~~[ ] support not specifying crate verion/dont use file system paths~~
+- [?] copying modules
 - [ ] recursivly copying item dependancies
 
 ## Ideas
@@ -23,7 +23,7 @@ to add "`pub`" in front of it.
     - [ ] field names
     - [ ] field types
     - [ ] field size, alignment
-    - [ ] constants
+    - [ ] associated types and constants
     - [ ] method arguments
     - [ ] method return value
 
